@@ -37,7 +37,8 @@ class QuestionController extends Controller
             $validatedData = $request->validate([
                 'name' => 'required',
                 'choice_type' => 'required|in:short answer,paragraph,date,multiple choice,dropdown,checkboxes',
-                'choices' => 'required_if:choice_type,multiple choice,dropdown,checkboxes'
+                'choices' => 'required_if:choice_type,multiple choice,dropdown,checkboxes',
+                'is_required' => 'required'
             ]);
         } catch (ValidationException $e) {
             return response()->json([
@@ -51,7 +52,12 @@ class QuestionController extends Controller
         $userEmailDomain = substr($userEmail, strpos($userEmail, '@') + 1);
 
         $allowedDomains = Allowed_domain::where('form_id', $form->id)->get();
-        $isValidDomain = $allowedDomains->contains('domain', $userEmailDomain);
+
+        if ($allowedDomains->isEmpty())  {
+            $isValidDomain = true;
+        } else {   
+            $isValidDomain = $allowedDomains->contains('domain', $userEmailDomain);
+        }
 
         if (!$isValidDomain) {
             return response()->json([
@@ -64,7 +70,7 @@ class QuestionController extends Controller
             'choice_type' => $validatedData['choice_type'],
             'choices' => $validatedData['choices'],
             'form_id' => $form->id,
-            'is_required' => 1,
+            'is_required' => $validatedData['is_required'],
         ]);
 
         return response()->json([
@@ -108,7 +114,11 @@ class QuestionController extends Controller
         $userEmailDomain = substr($userEmail, strpos($userEmail, '@') + 1);
 
         $allowedDomains = Allowed_domain::where('form_id', $form->id)->get();
-        $isValidDomain = $allowedDomains->contains('domain', $userEmailDomain);
+        if ($allowedDomains->isEmpty())  {
+            $isValidDomain = true;
+        } else {   
+            $isValidDomain = $allowedDomains->contains('domain', $userEmailDomain);
+        }
 
         if (!$isValidDomain) {
             return response()->json([

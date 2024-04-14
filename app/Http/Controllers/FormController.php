@@ -12,15 +12,13 @@ use Illuminate\Support\Facades\Auth;
 
 class FormController extends Controller
 {
-    public function __construct() {
-        $this->middleware('auth:sanctum');
-    }
     /**
      * Display a listing of the resource.
      */
     public function index()
     {
-        $forms = Form::all();
+        $user = Auth::user();
+        $forms = Form::where('creator_id', $user->id)->get();
         return response()->json([
             'message' => 'Get All Forms Success',
             'forms' => $forms
@@ -63,11 +61,13 @@ class FormController extends Controller
             'limit_one_response' => $validatedData['limit_one_response'],
         ]);
 
-        foreach ($validatedData['allowed_domains'] as $domain) {
-            Allowed_domain::create([
-                'form_id' => $form->id,
-                'domain' => $domain,
-            ]);
+        if ($validatedData['allowed_domains']) {
+            foreach ($validatedData['allowed_domains'] as $domain) {
+                Allowed_domain::create([
+                    'form_id' => $form->id,
+                    'domain' => $domain,
+                ]);
+            }
         }
 
         return response()->json([
@@ -86,7 +86,12 @@ class FormController extends Controller
         $userEmailDomain = substr($userEmail, strpos($userEmail, '@') + 1);
 
         $allowedDomains = Allowed_domain::where('form_id', $form->id)->get();
-        $isValidDomain = $allowedDomains->contains('domain', $userEmailDomain);
+
+        if ($allowedDomains->isEmpty())  {
+            $isValidDomain = true;
+        } else {   
+            $isValidDomain = $allowedDomains->contains('domain', $userEmailDomain);
+        }
 
         if (!$isValidDomain) {
             return response()->json([
@@ -95,7 +100,7 @@ class FormController extends Controller
         }
 
         $formId = $form->id;
-        $formResults = Form::where('id', $formId)->with('allowedDomains', 'questions')->get();
+        $formResults = Form::where('id', $formId)->with('allowedDomains', 'questions')->first();
         return response()->json([
             'message' => 'Get Form Success',
             'form' => $formResults

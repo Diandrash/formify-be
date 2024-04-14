@@ -16,7 +16,7 @@ return new class extends Migration
             $table->unsignedBigInteger('creator_id');
             $table->string('name');
             $table->string('slug');
-            $table->string('description');
+            $table->string('description')->nullable();
             $table->tinyInteger('limit_one_response');
             $table->timestamps();
 
